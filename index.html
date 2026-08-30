@@ -4,18 +4,44 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
 <title>WeaoSMP.xyz &mdash; Server Status</title>
-<meta name="description" content="Live status tracker for the weaosmp.xyz Minecraft server. Player count, version, MOTD and who's currently playing." />
-<meta name="theme-color" content="#1a1a1a" />
-<meta property="og:title" content="WeaoSMP.xyz — Server Status" />
-<meta property="og:description" content="Live status tracker for the weaosmp.xyz Minecraft server." />
+<meta name="description" content="Live status for the weaosmp.xyz Minecraft server — who is playing right now, player count, version, MOTD and uptime history." />
+<link rel="canonical" href="https://mireyacs.github.io/weaosmp-status/" />
+
+<!-- Discord tints an embed's left bar with the first theme-color it finds, so
+     that one is WEAO green. Browsers prefer a media-matched tag, which keeps
+     the mobile address bar the same dark as the page. -->
+<meta name="theme-color" content="#3bea57" />
+<meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)" />
+<meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: light)" />
+
+<!-- Open Graph — Discord, Slack, iMessage, Facebook. Absolute URLs only:
+     scrapers do not resolve relative ones. -->
+<meta property="og:site_name" content="WeaoSMP.xyz" />
 <meta property="og:type" content="website" />
+<meta property="og:url" content="https://mireyacs.github.io/weaosmp-status/" />
+<meta property="og:title" content="WeaoSMP.xyz — Minecraft Server Status" />
+<meta property="og:description" content="Live status for weaosmp.xyz — who is playing right now, player count, version, MOTD and uptime history. Refreshes every 60 seconds." />
+<meta property="og:locale" content="en_US" />
+<meta property="og:image" content="https://mireyacs.github.io/weaosmp-status/assets/img/og-image.png" />
+<meta property="og:image:secure_url" content="https://mireyacs.github.io/weaosmp-status/assets/img/og-image.png" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="WeaoSMP.xyz — Minecraft server status tracker" />
+
+<!-- Twitter/X card tags; Discord also reads twitter:card to decide between a
+     thumbnail and a full-width image. -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="WeaoSMP.xyz — Minecraft Server Status" />
+<meta name="twitter:description" content="Live status for weaosmp.xyz — who is playing right now, player count, version, MOTD and uptime history." />
+<meta name="twitter:image" content="https://mireyacs.github.io/weaosmp-status/assets/img/og-image.png" />
+<meta name="twitter:image:alt" content="WeaoSMP.xyz — Minecraft server status tracker" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="assets/css/style.css" />
 <link rel="icon" href="assets/img/favicon.ico" sizes="any" />
-<link rel="apple-touch-icon" href="assets/img/server-icon.webp" />
-<meta property="og:image" content="assets/img/server-icon.webp" />
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png" />
 </head>
 <body class="antialiased dark" data-theme="dark">
 

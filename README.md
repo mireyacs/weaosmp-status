@@ -41,8 +41,42 @@ Both live in `assets/img/` and ship with the page rather than being hotlinked:
   whenever the server is down or the status API is unreachable.
 - `red-heart.svg`, `sirmeme.png`, `ball2.0.png` — the emblems the voxlis.NET,
   Sirmeme and Ball 2.0 themes use. Each only loads when its theme is picked.
+- `og-image.png` — the 1200x630 link preview thumbnail
+- `apple-touch-icon.png` — 180x180 home-screen icon
 
 Theme rain is skipped entirely under `prefers-reduced-motion`.
+
+## Link previews
+
+`index.html` carries a full Open Graph + Twitter card block aimed primarily at
+Discord. Every URL in it is absolute, since scrapers do not resolve relative
+ones — if the site ever moves, those need updating along with `og:url` and the
+canonical link.
+
+Two things worth knowing:
+
+- **Discord colours an embed's left bar from `theme-color`.** The page declares
+  the WEAO green first for Discord, then repeats a dark value with a
+  `prefers-color-scheme` media attribute; browsers prefer the media-matched tag,
+  so the mobile address bar stays dark while the embed bar stays green.
+- **Discord caches aggressively.** After changing the tags or the image, re-scrape
+  with <https://discord.com/developers/embed?url=...> or by adding a throwaway
+  query string (`?v=2`) to the link. It caches per exact URL.
+
+### Regenerating the thumbnail
+
+The thumbnail is a rendered web page, not a hand-made image, so it stays in
+sync with the site's type and palette:
+
+```bash
+./tools/render-og.sh                          # needs Chrome on PATH
+CHROME="flatpak run com.google.Chrome" ./tools/render-og.sh   # or point at one
+```
+
+It serves the repo over HTTP, screenshots `tools/og-image.html` at exactly
+1200x630, and writes `assets/img/og-image.png`. A sandboxed browser cannot write
+into the repo, so the script stages the render through `$HOME/Downloads` (or
+`$OG_STAGE`) and moves it into place.
 
 ### One thing to watch when editing themes
 
