@@ -59,8 +59,9 @@ python3 -m http.server 8000
 
 ## Deployment
 
-Pushing to `main` triggers `.github/workflows/pages.yml`, which publishes the
-repository root to GitHub Pages.
+GitHub Pages serves the repository root of `main` directly (Settings → Pages →
+*Deploy from a branch*), so a plain `git push` publishes. `.nojekyll` keeps
+Jekyll from touching the files.
 
 ---
 
