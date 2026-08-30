@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en" class="dark" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5, viewport-fit=cover" />
+<title>WeaoSMP.xyz &mdash; Server Status</title>
+<meta name="description" content="Live status tracker for the weaosmp.xyz Minecraft server. Player count, version, MOTD and who's currently playing." />
+<meta name="theme-color" content="#1a1a1a" />
+<meta property="og:title" content="WeaoSMP.xyz — Server Status" />
+<meta property="og:description" content="Live status tracker for the weaosmp.xyz Minecraft server." />
+<meta property="og:type" content="website" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="assets/css/style.css" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231a1a1a'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%233bea57'/%3E%3C/svg%3E" />
+</head>
+<body class="antialiased dark" data-theme="dark">
+
+<div class="bg-gradient" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="topbar-logo">
+    <a class="logo" href="./"><span>Weao</span><span class="logo-red">SMP</span><span class="logo-green">.xyz</span></a>
+  </div>
+
+  <nav class="topbar-nav">
+    <a class="nav-item" href="#status">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12h4l3 8 4-16 3 8h4"/></svg>
+      <span>Status</span>
+    </a>
+    <a class="nav-item" href="#players">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.4-1.8M17 20H7m10 0v-2c0-.7-.1-1.3-.4-1.8M7 20H2v-2a3 3 0 015.4-1.8M7 20v-2c0-.7.1-1.3.4-1.8m0 0a5 5 0 019.2 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+      <span>Players</span>
+    </a>
+    <a class="nav-item" href="#history">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <span>History</span>
+    </a>
+  </nav>
+
+  <div class="topbar-actions">
+    <button class="nav-item theme-btn" id="theme-btn" type="button" aria-label="Change theme" aria-haspopup="true" aria-expanded="false">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h9a2 2 0 012 2v12a4 4 0 01-4 4H7zm0 0h10a4 4 0 004-4v-5a2 2 0 00-2-2h-2"/></svg>
+      <span>Themes</span>
+    </button>
+    <div class="theme-menu" id="theme-menu" role="menu" hidden></div>
+  </div>
+</header>
+
+<main class="page">
+
+  <section class="hero">
+    <h1 class="hero-title"><span>Weao</span><span class="logo-red">SMP</span><span class="logo-green">.xyz</span></h1>
+    <p class="hero-sub">Live status tracker for the WeaoSMP Minecraft server</p>
+    <p class="hero-sub-alt">Pings the server every minute &mdash; no refresh needed</p>
+  </section>
+
+  <!-- ===== STATUS ===== -->
+  <section id="status" class="card status-card" aria-busy="true">
+    <div class="status-head">
+      <div class="status-identity">
+        <img class="server-icon" id="server-icon" alt="" width="64" height="64" />
+        <div class="status-identity-text">
+          <div class="status-host">
+            <span id="host-label">weaosmp.xyz</span>
+            <button class="copy-btn" id="copy-btn" type="button" title="Copy server address">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              <span>Copy IP</span>
+            </button>
+          </div>
+          <div class="status-sub" id="status-sub">Contacting the server&hellip;</div>
+        </div>
+      </div>
+
+      <div class="status-right">
+        <span class="status-badge is-checking" id="status-badge">
+          <span class="status-dot"></span><span id="status-badge-text">Checking</span>
+        </span>
+        <button class="refresh-btn" id="refresh-btn" type="button" title="Refresh now">
+          <svg class="refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.6M20 20v-5h-.6M19.4 9A8 8 0 005.6 6.6L4 9m0 6a8 8 0 0013.8 2.4L20 15"/></svg>
+          <span id="refresh-label">Refresh</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="motd-wrap" id="motd-wrap" hidden>
+      <div class="motd-label">MOTD</div>
+      <pre class="motd" id="motd"></pre>
+    </div>
+
+    <div class="stat-grid" id="stat-grid">
+      <div class="stat"><div class="stat-label">Players</div><div class="stat-value" id="stat-players">&mdash;</div><div class="stat-meta" id="stat-players-meta">&nbsp;</div></div>
+      <div class="stat"><div class="stat-label">Version</div><div class="stat-value" id="stat-version">&mdash;</div><div class="stat-meta" id="stat-protocol">&nbsp;</div></div>
+      <div class="stat"><div class="stat-label">Address</div><div class="stat-value mono" id="stat-address">weaosmp.xyz</div><div class="stat-meta mono" id="stat-ip">&nbsp;</div></div>
+      <div class="stat"><div class="stat-label">Software</div><div class="stat-value" id="stat-software">&mdash;</div><div class="stat-meta" id="stat-plugins">&nbsp;</div></div>
+    </div>
+
+    <div class="capacity" id="capacity" hidden>
+      <div class="capacity-head"><span>Server capacity</span><span id="capacity-pct">0%</span></div>
+      <div class="capacity-bar"><div class="capacity-fill" id="capacity-fill" style="width:0%"></div></div>
+    </div>
+
+    <div class="status-foot">
+      <span id="last-checked">Never checked</span>
+      <span class="dot-sep">&bull;</span>
+      <span id="next-check">Next check in &mdash;s</span>
+    </div>
+  </section>
+
+  <!-- ===== PLAYERS ===== -->
+  <section id="players" class="card">
+    <div class="card-head">
+      <h2 class="card-title">
+        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.4-1.8M17 20H7m10 0v-2c0-.7-.1-1.3-.4-1.8M7 20H2v-2a3 3 0 015.4-1.8M7 20v-2c0-.7.1-1.3.4-1.8m0 0a5 5 0 019.2 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        Currently playing
+      </h2>
+      <span class="pill" id="players-pill">&mdash;</span>
+    </div>
+    <div class="player-grid" id="player-grid"></div>
+    <p class="empty" id="players-empty">Waiting for the first ping&hellip;</p>
+  </section>
+
+  <!-- ===== HISTORY ===== -->
+  <section id="history" class="card">
+    <div class="card-head">
+      <h2 class="card-title">
+        <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Recent checks
+      </h2>
+      <span class="pill" id="uptime-pill">&mdash;</span>
+    </div>
+    <div class="uptime-strip" id="uptime-strip"></div>
+    <div class="uptime-legend">
+      <span><i class="sw sw-up"></i> Online</span>
+      <span><i class="sw sw-down"></i> Offline</span>
+      <span><i class="sw sw-none"></i> No data</span>
+      <span class="uptime-note">Stored in your browser only &mdash; history starts when you first open this page.</span>
+    </div>
+    <div class="spark-wrap" id="spark-wrap" hidden>
+      <div class="spark-head"><span>Player count over time</span><span id="spark-peak"></span></div>
+      <svg class="spark" id="spark" viewBox="0 0 600 90" preserveAspectRatio="none" aria-hidden="true"></svg>
+    </div>
+  </section>
+
+  <section class="how card card-quiet">
+    <h2 class="card-title small">How this works</h2>
+    <p>The page pings <code>weaosmp.xyz:25565</code> through the public
+      <a href="https://mcstatus.io" target="_blank" rel="noopener noreferrer">mcstatus.io</a> API
+      (falling back to <a href="https://mcsrvstat.us" target="_blank" rel="noopener noreferrer">mcsrvstat.us</a>) directly from your browser,
+      then refreshes every 60 seconds.</p>
+    <p class="muted">The player list depends on the server exposing its sample list in the ping response. Some servers hide it, or only return a handful of names &mdash; in that case the count is still accurate even when no heads are shown.</p>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="footer-cols">
+    <div class="footer-col">
+      <h3>Server</h3>
+      <a href="#status">Status</a>
+      <a href="#players">Players</a>
+      <a href="#history">History</a>
+    </div>
+    <div class="footer-col">
+      <h3>Data</h3>
+      <a href="https://mcstatus.io" target="_blank" rel="noopener noreferrer">mcstatus.io</a>
+      <a href="https://mcsrvstat.us" target="_blank" rel="noopener noreferrer">mcsrvstat.us</a>
+      <a href="https://mc-heads.net" target="_blank" rel="noopener noreferrer">mc-heads.net</a>
+    </div>
+    <div class="footer-col">
+      <h3>Connect</h3>
+      <a href="https://weao.gg" target="_blank" rel="noopener noreferrer">weao.gg</a>
+      <a href="https://github.com/mireyacs/weaosmp-status" target="_blank" rel="noopener noreferrer">Source</a>
+    </div>
+  </div>
+  <p class="footer-copy">Unofficial community status page for <strong>weaosmp.xyz</strong>. Not affiliated with Mojang or Microsoft.</p>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="assets/js/app.js"></script>
+</body>
+</html>
