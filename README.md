@@ -17,6 +17,8 @@ A live status page for the **weaosmp.xyz** Minecraft server, styled after the
   - **voxlis.NET** rains red hearts, and clicking anywhere spawns more
   - **Sirmeme** rains the Sirmeme emblem
   - **Ball 2.0** paints its image over the page and every element on it
+  - **Israel** uses the flag's white and `#0038b8`, and switches the whole
+    interface to Hebrew with a right-to-left layout
 - **Back to top** — a circular button appears in the bottom-right once you scroll past 320px
 
 ## How it works
@@ -77,6 +79,31 @@ It serves the repo over HTTP, screenshots `tools/og-image.html` at exactly
 1200x630, and writes `assets/img/og-image.png`. A sandboxed browser cannot write
 into the repo, so the script stages the render through `$HOME/Downloads` (or
 `$OG_STAGE`) and moves it into place.
+
+## Translations
+
+A theme may carry a language: `{ id: 'israel', …, lang: 'he' }` in the `THEMES`
+array is what makes picking it switch the page to Hebrew. Everything else falls
+back to English, and switching away restores it.
+
+Strings live in one `I18N` table in `assets/js/app.js`:
+
+- **Static markup** is tagged in `index.html` — `data-i18n` for text,
+  `data-i18n-html` for strings containing links, `data-i18n-title` and
+  `data-i18n-aria-label` for attributes.
+- **Live strings** go through `t('key', { placeholder: value })`, or
+  `tn('key', count)` where a `key_one` entry supplies the singular.
+
+`applyLanguage()` repaints the static markup first and then re-renders the last
+response over it, so switching language mid-session updates the player list,
+status line and uptime figures rather than resetting them to their placeholders.
+Anything JS owns outright (`#last-checked`) is deliberately *not* tagged, or the
+static pass would overwrite the live value.
+
+For Hebrew the page sets `lang="he" dir="rtl"` and swaps Poppins for Rubik,
+which carries both scripts. Identifiers that must stay left-to-right inside
+right-to-left prose — the address, IP, MOTD, version and player names — are
+pinned with `direction: ltr`.
 
 ### One thing to watch when editing themes
 

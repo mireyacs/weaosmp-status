@@ -242,6 +242,33 @@ body[data-theme="revision"] {
   --scrollbar-thumb-hover: #e06c754d;
 }
 
+html[data-theme="israel"],
+body[data-theme="israel"] {
+  --weao-green: #0038b8;
+  --weao-red: #0038b8;
+  --background: #f2f6fd;
+  --background-alt: #fff;
+  --background-secondary: #ffffffcc;
+  --foreground: #0b1e46;
+  --foreground-alt: #0b1e46cc;
+  --foreground-muted: #0b1e4699;
+  --foreground-subtle: #0b1e4666;
+  --border-primary: #0038b826;
+  --border-secondary: #0038b814;
+  --topbar-bg: #ffffff8c;
+  --topbar-border: #0038b826;
+  --logo-foreground: #0b1e46;
+  --interactive-primary: #0038b80d;
+  --interactive-primary-hover: #0038b814;
+  --interactive-secondary: #0038b81a;
+  --interactive-secondary-hover: #0038b826;
+  --interactive-selected: #0038b826;
+  --gradient-color-1: rgba(0, 56, 184, var(--gradient-opacity));
+  --gradient-color-2: rgba(0, 56, 184, var(--gradient-opacity));
+  --scrollbar-thumb: #0038b833;
+  --scrollbar-thumb-hover: #0038b84d;
+}
+
 html[data-theme="ball20"],
 body[data-theme="ball20"] {
   --weao-green: #000;
@@ -411,6 +438,7 @@ code, .mono { font-family: var(--font-mono); }
 }
 /* …pure black instead of pure white on the light palettes */
 html[data-theme="light"] .theme-option[aria-checked="true"],
+html[data-theme="israel"] .theme-option[aria-checked="true"],
 html[data-theme="ball20"] .theme-option[aria-checked="true"] { color: #000; }
 .theme-swatch {
   width: 15px; height: 15px;
@@ -941,6 +969,40 @@ html[data-theme="ball20"] .rain { display: none; }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 .toast.ok { border-color: var(--status-updated-start); }
 .toast.err { border-color: var(--status-outdated-start); }
+
+
+/* ===== Hebrew / RTL ======================================================
+   Poppins has no Hebrew glyphs, so the Israel theme swaps in Rubik, which
+   carries both scripts and keeps the geometric feel. Everything below only
+   mirrors what flexbox does not mirror on its own.
+   ======================================================================== */
+
+html[lang="he"] {
+  --font-poppins: "Rubik", "Poppins", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Identifiers stay left-to-right inside right-to-left prose */
+[dir="rtl"] .mono,
+[dir="rtl"] .motd,
+[dir="rtl"] .player-name,
+[dir="rtl"] .status-host,
+[dir="rtl"] .url,
+[dir="rtl"] code {
+  direction: ltr;
+  text-align: left;
+}
+[dir="rtl"] .status-host { text-align: right; }
+
+[dir="rtl"] .theme-menu { right: auto; left: 0; }
+[dir="rtl"] .to-top { right: auto; left: 24px; }
+[dir="rtl"] .uptime-note { margin-left: 0; margin-right: auto; }
+[dir="rtl"] .stat-label,
+[dir="rtl"] .motd-label,
+[dir="rtl"] .footer-col h3 { letter-spacing: 0; }
+
+@media (max-width: 620px) {
+  [dir="rtl"] .to-top { right: auto; left: 16px; }
+}
 
 /* ===== Responsive ===== */
 @media (max-width: 860px) {

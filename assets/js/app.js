@@ -24,8 +24,11 @@
     { id: 'pulsery',  name: 'Pulsery',    colors: ['#0a0a0f', '#161625', '#6366f1', '#8b5cf6'] },
     { id: 'sirmeme',  name: 'Sirmeme',    colors: ['#000000', '#1a1a1a', '#ff00d8', '#35ff03'] },
     { id: 'revision', name: 'Revision',   colors: ['#070304', '#0f0f14', '#e06c75', '#e0e0e0'] },
-    { id: 'ball20',   name: 'Ball 2.0',   colors: ['#cccccc', '#aaaaaa', '#888888', '#666666'] }
+    { id: 'ball20',   name: 'Ball 2.0',   colors: ['#cccccc', '#aaaaaa', '#888888', '#666666'] },
+    { id: 'israel',   name: 'Israel',     colors: ['#ffffff', '#0038b8', '#0038b8', '#ffffff'], lang: 'he' }
   ];
+
+  var DEFAULT_LANG = 'en';
 
   // Same emblems, counts and sizes weao.gg uses for these two themes.
   var RAIN = {
@@ -78,6 +81,8 @@
 
   var address = CONFIG.host + (CONFIG.port === 25565 ? '' : ':' + CONFIG.port);
   var lastCheckedAt = null;
+  var lastCheckedKey = 'status.lastChecked';
+  var lastData = null;
   var nextCheckAt = 0;
   var inFlight = false;
   var timer = null;
@@ -106,6 +111,263 @@
     if (hist.length > CONFIG.historyMax) hist = hist.slice(hist.length - CONFIG.historyMax);
     safeSet(CONFIG.historyKey, JSON.stringify(hist));
     return hist;
+  }
+
+
+  /* ------------------------------------------------------------------- i18n
+     A theme may carry a language (the Israel theme ships Hebrew). Strings with
+     a {placeholder} are filled by t(); plural forms take a `_one` variant.
+     ---------------------------------------------------------------------- */
+
+  var I18N = {
+    en: {
+      'nav.status': 'Status',
+      'nav.players': 'Players',
+      'nav.history': 'History',
+      'nav.themes': 'Themes',
+
+      'hero.sub': 'Live status tracker for the WeaoSMP Minecraft server',
+      'hero.subAlt': 'Pings the server every minute — no refresh needed',
+
+      'status.copyIp': 'Copy IP',
+      'status.copyTitle': 'Copy server address',
+      'status.contacting': 'Contacting the server…',
+      'status.checking': 'Checking',
+      'status.online': 'Online',
+      'status.offline': 'Offline',
+      'status.unreachable': 'Unreachable',
+      'status.refresh': 'Refresh',
+      'status.refreshTitle': 'Refresh now',
+      'status.motd': 'MOTD',
+      'status.capacity': 'Server capacity',
+      'status.up': 'Accepting connections — data via {source}',
+      'status.down': 'The server did not answer the ping — checked via {source}',
+      'status.eula': ' • EULA blocked',
+      'status.apiError': 'Could not reach the status API ({error}).',
+      'status.neverChecked': 'Never checked',
+      'status.lastChecked': 'Last checked {time}',
+      'status.lastAttempt': 'Last attempt {time}',
+      'status.nextCheck': 'Next check in {seconds}s',
+      'status.checkingNow': 'Checking now…',
+      'status.networkError': 'network error',
+
+      'stat.players': 'Players',
+      'stat.version': 'Version',
+      'stat.address': 'Address',
+      'stat.software': 'Software',
+      'stat.slots': 'of {max} slots',
+      'stat.protocol': 'Protocol {protocol}',
+      'stat.unknown': 'Unknown',
+      'stat.plugins_one': '{count} plugin',
+      'stat.plugins': '{count} plugins',
+      'stat.mods_one': '{count} mod',
+      'stat.mods': '{count} mods',
+
+      'players.title': 'Currently playing',
+      'players.waiting': 'Waiting for the first ping…',
+      'players.serverOffline': 'Server offline',
+      'players.unknown': 'Unknown',
+      'players.pill': '{online} / {max} online',
+      'players.pillNoMax': '{online} online',
+      'players.nobodyOffline': 'Nobody is online — the server is not responding right now.',
+      'players.nobody': 'Nobody is playing right now.',
+      'players.hidden_one': '{count} player online, but the server does not share the name list in its ping response.',
+      'players.hidden': '{count} players online, but the server does not share the name list in its ping response.',
+      'players.more': '+{count} more not listed',
+      'players.apiDown': 'Player list unavailable while the status API is unreachable.',
+
+      'history.title': 'Recent checks',
+      'history.online': 'Online',
+      'history.offline': 'Offline',
+      'history.noData': 'No data',
+      'history.note': 'Stored in your browser only — history starts when you first open this page.',
+      'history.spark': 'Player count over time',
+      'history.empty': 'No data yet',
+      'history.pill_one': '{percent}% up • {count} check',
+      'history.pill': '{percent}% up • {count} checks',
+      'history.tipUp': '{time} — online, {players} playing',
+      'history.tipDown': '{time} — offline',
+      'history.tipNone': 'No data',
+      'history.peak': 'peak {peak} • now {now}',
+
+      'how.title': 'How this works',
+      'how.body': 'The page pings <code>weaosmp.xyz:25565</code> through the public <a href="https://mcstatus.io" target="_blank" rel="noopener noreferrer">mcstatus.io</a> API (falling back to <a href="https://mcsrvstat.us" target="_blank" rel="noopener noreferrer">mcsrvstat.us</a>) directly from your browser, then refreshes every 60 seconds.',
+      'how.caveat': 'The player list depends on the server exposing its sample list in the ping response. Some servers hide it, or only return a handful of names — in that case the count is still accurate even when no heads are shown.',
+
+      'toTop.aria': 'Scroll back to top',
+      'toTop.title': 'Back to top',
+
+      'footer.server': 'Server',
+      'footer.data': 'Data',
+      'footer.connect': 'Connect',
+      'footer.source': 'Source',
+      'footer.copy': 'Unofficial community status page for <strong>weaosmp.xyz</strong>. Not affiliated with Mojang or Microsoft.',
+
+      'toast.copied': 'Copied {address}',
+      'toast.copyFailed': 'Copy failed — the address is {address}',
+
+      'theme.dark': 'Dark',
+      'theme.light': 'Light',
+      'theme.amoled': 'Amoled',
+      'theme.kyoto': 'Kyoto',
+      'theme.voxlis': 'voxlis.NET',
+      'theme.pulsery': 'Pulsery',
+      'theme.sirmeme': 'Sirmeme',
+      'theme.revision': 'Revision',
+      'theme.ball20': 'Ball 2.0',
+      'theme.israel': 'Israel'
+    },
+
+    he: {
+      'nav.status': 'סטטוס',
+      'nav.players': 'שחקנים',
+      'nav.history': 'היסטוריה',
+      'nav.themes': 'ערכות נושא',
+
+      'hero.sub': 'מעקב סטטוס חי אחר שרת המיינקראפט WeaoSMP',
+      'hero.subAlt': 'בודק את השרת בכל דקה — אין צורך לרענן',
+
+      'status.copyIp': 'העתקת כתובת',
+      'status.copyTitle': 'העתקת כתובת השרת',
+      'status.contacting': 'יוצר קשר עם השרת…',
+      'status.checking': 'בודק',
+      'status.online': 'מקוון',
+      'status.offline': 'לא מקוון',
+      'status.unreachable': 'לא נגיש',
+      'status.refresh': 'רענון',
+      'status.refreshTitle': 'רענון עכשיו',
+      'status.motd': 'הודעת היום',
+      'status.capacity': 'תפוסת השרת',
+      'status.up': 'השרת מקבל חיבורים — נתונים מ־{source}',
+      'status.down': 'השרת לא הגיב לבדיקה — נבדק דרך {source}',
+      'status.eula': ' • חסום עקב תנאי השימוש',
+      'status.apiError': 'לא ניתן להגיע לשירות הסטטוס ({error}).',
+      'status.neverChecked': 'טרם נבדק',
+      'status.lastChecked': 'נבדק לאחרונה ב־{time}',
+      'status.lastAttempt': 'ניסיון אחרון ב־{time}',
+      'status.nextCheck': 'הבדיקה הבאה בעוד {seconds} שניות',
+      'status.checkingNow': 'בודק כעת…',
+      'status.networkError': 'שגיאת רשת',
+
+      'stat.players': 'שחקנים',
+      'stat.version': 'גרסה',
+      'stat.address': 'כתובת',
+      'stat.software': 'תוכנה',
+      'stat.slots': 'מתוך {max} מקומות',
+      'stat.protocol': 'פרוטוקול {protocol}',
+      'stat.unknown': 'לא ידוע',
+      'stat.plugins_one': 'תוסף אחד',
+      'stat.plugins': '{count} תוספים',
+      'stat.mods_one': 'מוד אחד',
+      'stat.mods': '{count} מודים',
+
+      'players.title': 'משחקים כעת',
+      'players.waiting': 'ממתין לבדיקה הראשונה…',
+      'players.serverOffline': 'השרת כבוי',
+      'players.unknown': 'לא ידוע',
+      'players.pill': '{online} מתוך {max} מחוברים',
+      'players.pillNoMax': '{online} מחוברים',
+      'players.nobodyOffline': 'אף אחד לא מחובר — השרת אינו מגיב כרגע.',
+      'players.nobody': 'אף אחד לא משחק כרגע.',
+      'players.hidden_one': 'שחקן אחד מחובר, אך השרת אינו חושף את רשימת השמות בתגובת הבדיקה.',
+      'players.hidden': '{count} שחקנים מחוברים, אך השרת אינו חושף את רשימת השמות בתגובת הבדיקה.',
+      'players.more': 'ועוד {count} שאינם ברשימה',
+      'players.apiDown': 'רשימת השחקנים אינה זמינה כל עוד שירות הסטטוס אינו נגיש.',
+
+      'history.title': 'בדיקות אחרונות',
+      'history.online': 'מקוון',
+      'history.offline': 'לא מקוון',
+      'history.noData': 'אין נתונים',
+      'history.note': 'נשמר בדפדפן שלך בלבד — ההיסטוריה מתחילה בפתיחה הראשונה של הדף.',
+      'history.spark': 'מספר השחקנים לאורך זמן',
+      'history.empty': 'אין נתונים עדיין',
+      'history.pill_one': '{percent}% זמינות • בדיקה אחת',
+      'history.pill': '{percent}% זמינות • {count} בדיקות',
+      'history.tipUp': '{time} — מקוון, {players} משחקים',
+      'history.tipDown': '{time} — לא מקוון',
+      'history.tipNone': 'אין נתונים',
+      'history.peak': 'שיא {peak} • כעת {now}',
+
+      'how.title': 'איך זה עובד',
+      'how.body': 'הדף בודק את <code>weaosmp.xyz:25565</code> דרך ממשק ה־API הציבורי <a href="https://mcstatus.io" target="_blank" rel="noopener noreferrer">mcstatus.io</a> (ובמידת הצורך <a href="https://mcsrvstat.us" target="_blank" rel="noopener noreferrer">mcsrvstat.us</a>) ישירות מהדפדפן שלך, ומתרענן כל 60 שניות.',
+      'how.caveat': 'רשימת השחקנים תלויה בכך שהשרת חושף את רשימת הדוגמה בתגובת הבדיקה. שרתים מסוימים מסתירים אותה או מחזירים רק כמה שמות — במקרה כזה המספר עדיין מדויק גם כשלא מוצגות דמויות.',
+
+      'toTop.aria': 'חזרה לראש הדף',
+      'toTop.title': 'חזרה למעלה',
+
+      'footer.server': 'שרת',
+      'footer.data': 'נתונים',
+      'footer.connect': 'קישורים',
+      'footer.source': 'קוד מקור',
+      'footer.copy': 'דף סטטוס קהילתי לא רשמי עבור <strong>weaosmp.xyz</strong>. אינו קשור ל־Mojang או ל־Microsoft.',
+
+      'toast.copied': 'הכתובת {address} הועתקה',
+      'toast.copyFailed': 'ההעתקה נכשלה — הכתובת היא {address}',
+
+      'theme.dark': 'כהה',
+      'theme.light': 'בהיר',
+      'theme.amoled': 'AMOLED',
+      'theme.kyoto': 'קיוטו',
+      'theme.voxlis': 'voxlis.NET',
+      'theme.pulsery': 'Pulsery',
+      'theme.sirmeme': 'Sirmeme',
+      'theme.revision': 'Revision',
+      'theme.ball20': 'Ball 2.0',
+      'theme.israel': 'ישראל'
+    }
+  };
+
+  var lang = DEFAULT_LANG;
+
+  function t(key, params) {
+    var table = I18N[lang] || I18N[DEFAULT_LANG];
+    var str = table[key];
+    if (str === undefined) str = I18N[DEFAULT_LANG][key];
+    if (str === undefined) return key;
+    if (!params) return str;
+    return str.replace(/\{(\w+)\}/g, function (whole, name) {
+      return params[name] === undefined ? whole : params[name];
+    });
+  }
+
+  // plural helper: `count === 1` picks the `<key>_one` entry when one exists
+  function tn(key, count, params) {
+    var p = params || {};
+    p.count = count;
+    return t(count === 1 && (I18N[lang] || {})[key + '_one'] !== undefined ? key + '_one' : key, p);
+  }
+
+  function applyLanguage(next) {
+    lang = I18N[next] ? next : DEFAULT_LANG;
+    var rtl = lang === 'he';
+    document.documentElement.setAttribute('lang', lang);
+    document.documentElement.setAttribute('dir', rtl ? 'rtl' : 'ltr');
+    document.body.setAttribute('dir', rtl ? 'rtl' : 'ltr');
+
+    var node, i, list;
+    list = document.querySelectorAll('[data-i18n]');
+    for (i = 0; i < list.length; i++) { node = list[i]; node.textContent = t(node.dataset.i18n); }
+
+    list = document.querySelectorAll('[data-i18n-html]');
+    for (i = 0; i < list.length; i++) { node = list[i]; node.innerHTML = t(node.dataset.i18nHtml); }
+
+    list = document.querySelectorAll('[data-i18n-title]');
+    for (i = 0; i < list.length; i++) { node = list[i]; node.title = t(node.dataset.i18nTitle); }
+
+    list = document.querySelectorAll('[data-i18n-aria-label]');
+    for (i = 0; i < list.length; i++) { node = list[i]; node.setAttribute('aria-label', t(node.dataset.i18nAriaLabel)); }
+
+    // The walk above restored every static default, including the nodes that
+    // later hold live values — so repaint those from the last response.
+    if (lastData) {
+      renderStatus(lastData);
+      renderPlayers(lastData);
+    }
+    renderHistory(loadHistory());
+    el.lastChecked.textContent = lastCheckedAt
+      ? t(lastCheckedKey, { time: formatTime(lastCheckedAt) })
+      : t('status.neverChecked');
+    tickCountdown();
   }
 
   /* ------------------------------------------------------------ theme rain */
@@ -176,6 +438,10 @@
     document.documentElement.className = theme;
     document.body.className = 'antialiased ' + theme;
     safeSet(CONFIG.themeKey, theme);
+
+    var entry = THEMES.filter(function (x) { return x.id === theme; })[0];
+    applyLanguage((entry && entry.lang) || DEFAULT_LANG);
+
     Array.prototype.forEach.call(el.themeMenu.children, function (btn) {
       btn.setAttribute('aria-checked', String(btn.dataset.themeId === theme));
     });
@@ -199,6 +465,7 @@
       }).join(', ') + ')';
 
       var label = document.createElement('span');
+      label.dataset.i18n = 'theme.' + t.id;
       label.textContent = t.name;
 
       btn.appendChild(sw);
@@ -391,7 +658,7 @@
 
   function formatTime(ts) {
     var d = new Date(ts);
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return d.toLocaleTimeString(lang === 'he' ? 'he-IL' : [], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   }
 
   function headUrl(player) {
@@ -404,20 +671,22 @@
     el.playerGrid.textContent = '';
 
     if (!data.online) {
-      el.playersPill.textContent = 'Server offline';
+      el.playersPill.textContent = t('players.serverOffline');
       el.playersEmpty.hidden = false;
-      el.playersEmpty.textContent = 'Nobody is online — the server is not responding right now.';
+      el.playersEmpty.textContent = t('players.nobodyOffline');
       return;
     }
 
     var count = data.playersOnline;
-    el.playersPill.textContent = (count === null ? '—' : count) + (data.playersMax ? ' / ' + data.playersMax : '') + ' online';
+    el.playersPill.textContent = data.playersMax
+      ? t('players.pill', { online: count === null ? '—' : count, max: data.playersMax })
+      : t('players.pillNoMax', { online: count === null ? '—' : count });
 
     if (!data.list.length) {
       el.playersEmpty.hidden = false;
       el.playersEmpty.textContent = count
-        ? count + ' player' + (count === 1 ? '' : 's') + ' online, but the server does not share the name list in its ping response.'
-        : 'Nobody is playing right now.';
+        ? tn('players.hidden', count)
+        : t('players.nobody');
       return;
     }
 
@@ -464,7 +733,7 @@
       note.style.justifyContent = 'center';
       note.style.minWidth = '0';
       note.style.color = 'var(--foreground-subtle)';
-      note.textContent = '+' + (count - data.list.length) + ' more not listed';
+      note.textContent = t('players.more', { count: count - data.list.length });
       el.playerGrid.appendChild(note);
     }
   }
@@ -475,15 +744,15 @@
     el.statIp.textContent = data.ip ? data.ip + ':' + data.port : ' ';
 
     if (data.online) {
-      setBadge('online', 'Online');
-      el.statusSub.textContent = 'Accepting connections — data via ' + data.source;
+      setBadge('online', t('status.online'));
+      el.statusSub.textContent = t('status.up', { source: data.source });
     } else {
-      setBadge('offline', 'Offline');
-      el.statusSub.textContent = 'The server did not answer the ping — checked via ' + data.source;
+      setBadge('offline', t('status.offline'));
+      el.statusSub.textContent = t('status.down', { source: data.source });
     }
 
     if (data.eulaBlocked) {
-      el.statusSub.textContent += ' • EULA blocked';
+      el.statusSub.textContent += t('status.eula');
     }
 
     // The icon itself is shipped with the page; it desaturates while the server is down.
@@ -501,15 +770,15 @@
     var online = data.playersOnline;
     var max = data.playersMax;
     el.statPlayers.textContent = data.online && online !== null ? String(online) : '—';
-    el.statPlayersMeta.textContent = data.online && max ? 'of ' + max + ' slots' : ' ';
+    el.statPlayersMeta.textContent = data.online && max ? t('stat.slots', { max: max }) : ' ';
 
     el.statVersion.textContent = data.online && data.versionClean ? data.versionClean : '—';
-    el.statProtocol.textContent = data.online && data.protocol !== null ? 'Protocol ' + data.protocol : ' ';
+    el.statProtocol.textContent = data.online && data.protocol !== null ? t('stat.protocol', { protocol: data.protocol }) : ' ';
 
-    el.statSoftware.textContent = data.online ? (data.software || 'Unknown') : '—';
+    el.statSoftware.textContent = data.online ? (data.software || t('stat.unknown')) : '—';
     var extras = [];
-    if (data.plugins) extras.push(data.plugins + ' plugin' + (data.plugins === 1 ? '' : 's'));
-    if (data.mods) extras.push(data.mods + ' mod' + (data.mods === 1 ? '' : 's'));
+    if (data.plugins) extras.push(tn('stat.plugins', data.plugins));
+    if (data.mods) extras.push(tn('stat.mods', data.mods));
     el.statPlugins.textContent = extras.length ? extras.join(' • ') : ' ';
 
     // capacity
@@ -532,24 +801,24 @@
     for (var i = 0; i < padding; i++) {
       var blank = document.createElement('div');
       blank.className = 'uptime-cell';
-      blank.title = 'No data';
+      blank.title = t('history.tipNone');
       el.uptimeStrip.appendChild(blank);
     }
 
     recent.forEach(function (entry) {
       var cell = document.createElement('div');
       cell.className = 'uptime-cell ' + (entry.online ? 'up' : 'down');
-      cell.title = formatTime(entry.t) + ' — ' + (entry.online
-        ? 'online, ' + (entry.players === null ? '?' : entry.players) + ' playing'
-        : 'offline');
+      cell.title = entry.online
+        ? t('history.tipUp', { time: formatTime(entry.t), players: entry.players === null ? '?' : entry.players })
+        : t('history.tipDown', { time: formatTime(entry.t) });
       el.uptimeStrip.appendChild(cell);
     });
 
     if (!hist.length) {
-      el.uptimePill.textContent = 'No data yet';
+      el.uptimePill.textContent = t('history.empty');
     } else {
       var ups = hist.filter(function (e) { return e.online; }).length;
-      el.uptimePill.textContent = Math.round((ups / hist.length) * 100) + '% up • ' + hist.length + ' check' + (hist.length === 1 ? '' : 's');
+      el.uptimePill.textContent = tn('history.pill', hist.length, { percent: Math.round((ups / hist.length) * 100) });
     }
 
     renderSpark(hist);
@@ -612,7 +881,7 @@
     linePath.setAttribute('vector-effect', 'non-scaling-stroke');
     el.spark.appendChild(linePath);
 
-    el.sparkPeak.textContent = 'peak ' + peak + ' • now ' + values[values.length - 1];
+    el.sparkPeak.textContent = t('history.peak', { peak: peak, now: values[values.length - 1] });
   }
 
   /* ------------------------------------------------------------------ toast */
@@ -641,7 +910,7 @@
     if (inFlight) return;
     inFlight = true;
     setLoading(true);
-    if (!lastCheckedAt) setBadge('checking', 'Checking');
+    if (!lastCheckedAt) setBadge('checking', t('status.checking'));
 
     queryStatus().then(function (data) {
       renderStatus(data);
@@ -652,18 +921,22 @@
         players: data.online && typeof data.playersOnline === 'number' ? data.playersOnline : null
       });
       renderHistory(hist);
+      lastData = data;
       lastCheckedAt = Date.now();
-      el.lastChecked.textContent = 'Last checked ' + formatTime(lastCheckedAt);
+      lastCheckedKey = 'status.lastChecked';
+      el.lastChecked.textContent = t(lastCheckedKey, { time: formatTime(lastCheckedAt) });
     }).catch(function (err) {
-      setBadge('error', 'Unreachable');
+      setBadge('error', t('status.unreachable'));
       el.icon.classList.add('is-down');
-      el.statusSub.textContent = 'Could not reach the status API (' + (err && err.message ? err.message : 'network error') + ').';
-      el.playersPill.textContent = 'Unknown';
+      el.statusSub.textContent = t('status.apiError', { error: err && err.message ? err.message : t('status.networkError') });
+      el.playersPill.textContent = t('players.unknown');
       el.playerGrid.textContent = '';
       el.playersEmpty.hidden = false;
-      el.playersEmpty.textContent = 'Player list unavailable while the status API is unreachable.';
+      el.playersEmpty.textContent = t('players.apiDown');
+      lastData = null;
       lastCheckedAt = Date.now();
-      el.lastChecked.textContent = 'Last attempt ' + formatTime(lastCheckedAt);
+      lastCheckedKey = 'status.lastAttempt';
+      el.lastChecked.textContent = t(lastCheckedKey, { time: formatTime(lastCheckedAt) });
     }).then(function () {
       inFlight = false;
       setLoading(false);
@@ -678,9 +951,10 @@
   }
 
   function tickCountdown() {
+    if (inFlight) { el.nextCheck.textContent = t('status.checkingNow'); return; }
     if (!nextCheckAt) return;
     var left = Math.max(0, Math.ceil((nextCheckAt - Date.now()) / 1000));
-    el.nextCheck.textContent = inFlight ? 'Checking now…' : 'Next check in ' + left + 's';
+    el.nextCheck.textContent = t('status.nextCheck', { seconds: left });
   }
 
   /* ------------------------------------------------------------------- init */
@@ -708,9 +982,9 @@
         ? navigator.clipboard.writeText(address)
         : Promise.reject();
       write.then(function () {
-        toast('Copied ' + address, 'ok');
+        toast(t('toast.copied', { address: address }), 'ok');
       }, function () {
-        toast('Copy failed — the address is ' + address, 'err');
+        toast(t('toast.copyFailed', { address: address }), 'err');
       });
     });
 
