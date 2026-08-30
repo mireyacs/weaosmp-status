@@ -971,6 +971,48 @@ html[data-theme="ball20"] .rain { display: none; }
 .toast.err { border-color: var(--status-outdated-start); }
 
 
+
+/* ===== Israel theme decoration ===========================================
+   A menorah watermark behind the page, and the flag's twin stripes carried
+   under the topbar and over the footer. Star-of-David rain is configured in
+   app.js alongside the other themed rains.
+   ======================================================================== */
+
+html[data-theme="israel"] body::before {
+  content: "";
+  position: fixed;
+  inset-inline-end: 10px;
+  bottom: 10px;
+  width: 370px;
+  height: 370px;
+  background: url("../img/menorah.svg") no-repeat center / contain;
+  opacity: .055;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* the flag motif: two blue bands with a clear field between them */
+html[data-theme="israel"] .topbar::after,
+html[data-theme="israel"] .footer::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 10px;
+  pointer-events: none;
+  opacity: .8;
+  background:
+    linear-gradient(#0038b8, #0038b8) 0 0 / 100% 3px no-repeat,
+    linear-gradient(#0038b8, #0038b8) 0 100% / 100% 3px no-repeat;
+}
+html[data-theme="israel"] .topbar::after { top: 100%; }
+html[data-theme="israel"] .footer::before { bottom: 100%; }
+html[data-theme="israel"] .footer { position: relative; }
+
+@media (max-width: 620px) {
+  html[data-theme="israel"] body::before { width: 260px; height: 260px; opacity: .04; }
+}
+
 /* ===== Hebrew / RTL ======================================================
    Poppins has no Hebrew glyphs, so the Israel theme swaps in Rubik, which
    carries both scripts and keeps the geometric feel. Everything below only

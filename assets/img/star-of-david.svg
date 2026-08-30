@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Star of David">
+  <title>Star of David</title>
+  <g fill="none" stroke="#0038b8" stroke-width="8" stroke-linejoin="miter">
+    <path d="M50 10 L84.641 70 L15.359 70 Z"/>
+    <path d="M50 90 L15.359 30 L84.641 30 Z"/>
+  </g>
+</svg>

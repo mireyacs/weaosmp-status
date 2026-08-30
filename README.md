@@ -17,8 +17,11 @@ A live status page for the **weaosmp.xyz** Minecraft server, styled after the
   - **voxlis.NET** rains red hearts, and clicking anywhere spawns more
   - **Sirmeme** rains the Sirmeme emblem
   - **Ball 2.0** paints its image over the page and every element on it
-  - **Israel** uses the flag's white and `#0038b8`, and switches the whole
-    interface to Hebrew with a right-to-left layout
+  - **Israel** uses the flag's white and `#0038b8`, switches the whole
+    interface to Hebrew with a right-to-left layout, rains Stars of David,
+    carries the flag's twin stripes under the topbar and over the footer, and
+    sets a faint menorah watermark behind the page. Its picker swatch is the
+    flag itself rather than the usual colour quadrants.
 - **Back to top** — a circular button appears in the bottom-right once you scroll past 320px
 
 ## How it works
@@ -45,6 +48,9 @@ Both live in `assets/img/` and ship with the page rather than being hotlinked:
   Sirmeme and Ball 2.0 themes use. Each only loads when its theme is picked.
 - `og-image.png` — the 1200x630 link preview thumbnail
 - `apple-touch-icon.png` — 180x180 home-screen icon
+- `star-of-david.svg`, `israel-flag.svg`, `menorah.svg` — hand-drawn geometry
+  for the Israel theme, in the flag's `#0038b8`. They are plain paths rather
+  than traced artwork, so they stay crisp at any size and total under 2 KB.
 
 Theme rain is skipped entirely under `prefers-reduced-motion`.
 

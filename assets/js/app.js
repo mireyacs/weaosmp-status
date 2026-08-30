@@ -25,7 +25,8 @@
     { id: 'sirmeme',  name: 'Sirmeme',    colors: ['#000000', '#1a1a1a', '#ff00d8', '#35ff03'] },
     { id: 'revision', name: 'Revision',   colors: ['#070304', '#0f0f14', '#e06c75', '#e0e0e0'] },
     { id: 'ball20',   name: 'Ball 2.0',   colors: ['#cccccc', '#aaaaaa', '#888888', '#666666'] },
-    { id: 'israel',   name: 'Israel',     colors: ['#ffffff', '#0038b8', '#0038b8', '#ffffff'], lang: 'he' }
+    { id: 'israel',   name: 'Israel',     colors: ['#ffffff', '#0038b8', '#0038b8', '#ffffff'],
+      lang: 'he', swatch: 'assets/img/israel-flag.svg' }
   ];
 
   var DEFAULT_LANG = 'en';
@@ -33,7 +34,13 @@
   // Same emblems, counts and sizes weao.gg uses for these two themes.
   var RAIN = {
     voxlis:  { src: 'assets/img/red-heart.svg', clickable: true },
-    sirmeme: { src: 'assets/img/sirmeme.png',   clickable: false }
+    sirmeme: { src: 'assets/img/sirmeme.png',   clickable: false },
+    // deliberately fewer and fainter than the other two — this one sits behind
+    // a light palette, where the same density would read as clutter
+    israel:  {
+      src: 'assets/img/star-of-david.svg', clickable: false,
+      count: 12, size: [16, 30], opacity: [0.10, 0.26]
+    }
   };
   var RAIN_COUNT = 20;
   var RAIN_MAX = 50;
@@ -380,7 +387,9 @@
 
   function makeRainItem(cfg, clickX, clickY) {
     var img = document.createElement('img');
-    var size = rnd(20, 40);
+    var sizeRange = cfg.size || [20, 40];
+    var opRange = cfg.opacity || [0.45, 0.95];
+    var size = rnd(sizeRange[0], sizeRange[1]);
     img.className = 'rain-item' + (clickX === undefined ? '' : ' is-click');
     img.src = cfg.src;
     img.alt = '';
@@ -390,7 +399,7 @@
 
     var dur = rnd(6, 14);
     img.style.setProperty('--dur', dur.toFixed(2) + 's');
-    img.style.setProperty('--op', rnd(0.45, 0.95).toFixed(2));
+    img.style.setProperty('--op', rnd(opRange[0], opRange[1]).toFixed(2));
     img.style.setProperty('--drift', rnd(-70, 70).toFixed(0) + 'px');
     img.style.setProperty('--rot0', rnd(-25, 25).toFixed(0) + 'deg');
     img.style.setProperty('--rot1', rnd(-220, 220).toFixed(0) + 'deg');
@@ -415,7 +424,8 @@
     var cfg = RAIN[themeId];
     if (!cfg || prefersReducedMotion()) return;
     var frag = document.createDocumentFragment();
-    for (var i = 0; i < RAIN_COUNT; i++) frag.appendChild(makeRainItem(cfg));
+    var count = cfg.count || RAIN_COUNT;
+    for (var i = 0; i < count; i++) frag.appendChild(makeRainItem(cfg));
     el.rain.appendChild(frag);
   }
 
@@ -459,10 +469,14 @@
 
       var sw = document.createElement('span');
       sw.className = 'theme-swatch';
-      // four quadrants, one per theme colour — legible at 15px where bands are not
-      sw.style.background = 'conic-gradient(from 225deg, ' + t.colors.map(function (c, i) {
-        return c + ' 0 ' + ((i + 1) * 25) + '%';
-      }).join(', ') + ')';
+      if (t.swatch) {
+        sw.style.background = '#fff url("' + t.swatch + '") center / cover no-repeat';
+      } else {
+        // four quadrants, one per theme colour — legible at 15px where bands are not
+        sw.style.background = 'conic-gradient(from 225deg, ' + t.colors.map(function (c, i) {
+          return c + ' 0 ' + ((i + 1) * 25) + '%';
+        }).join(', ') + ')';
+      }
 
       var label = document.createElement('span');
       label.dataset.i18n = 'theme.' + t.id;
