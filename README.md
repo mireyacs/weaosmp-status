@@ -13,7 +13,10 @@ A live status page for the **weaosmp.xyz** Minecraft server, styled after the
 - **Stats** — player count, slot capacity bar, version + protocol, resolved IP, server software, plugin/mod counts
 - **MOTD** rendered with full Minecraft `§` colour and format codes (including Bungee `§x` hex)
 - **Recent checks** — an uptime strip and a player-count sparkline built from your own visits
-- **Themes** — all nine from WEAO's own picker (Dark, Light, Amoled, Kyoto, voxlis.NET, Pulsery, Sirmeme, Revision, Ball 2.0), remembered between visits
+- **Themes** — all nine from WEAO's own picker (Dark, Light, Amoled, Kyoto, voxlis.NET, Pulsery, Sirmeme, Revision, Ball 2.0), remembered between visits, with their signature effects:
+  - **voxlis.NET** rains red hearts, and clicking anywhere spawns more
+  - **Sirmeme** rains the Sirmeme emblem
+  - **Ball 2.0** paints its image over the page and every element on it
 - **Back to top** — a circular button appears in the bottom-right once you scroll past 320px
 
 ## How it works
@@ -36,6 +39,17 @@ Both live in `assets/img/` and ship with the page rather than being hotlinked:
 - `server-icon.webp` — the SMP's Discord icon, shown beside the address. It
   renders in full colour while the server is up and desaturates to grayscale
   whenever the server is down or the status API is unreachable.
+- `red-heart.svg`, `sirmeme.png`, `ball2.0.png` — the emblems the voxlis.NET,
+  Sirmeme and Ball 2.0 themes use. Each only loads when its theme is picked.
+
+Theme rain is skipped entirely under `prefers-reduced-motion`.
+
+### One thing to watch when editing themes
+
+The theme palettes are scoped to `html[data-theme=…]` / `body[data-theme=…]`
+rather than a bare `[data-theme=…]`, and the picker buttons deliberately use
+`data-theme-id`. A bare attribute selector matches the buttons too, which
+silently repaints each row's label in the palette it is offering.
 
 MOTD and player names come back from the API as `§`-coded strings and are parsed
 into DOM nodes locally; no API HTML is ever injected into the page.

@@ -27,6 +27,14 @@
     { id: 'ball20',   name: 'Ball 2.0',   colors: ['#cccccc', '#aaaaaa', '#888888', '#666666'] }
   ];
 
+  // Same emblems, counts and sizes weao.gg uses for these two themes.
+  var RAIN = {
+    voxlis:  { src: 'assets/img/red-heart.svg', clickable: true },
+    sirmeme: { src: 'assets/img/sirmeme.png',   clickable: false }
+  };
+  var RAIN_COUNT = 20;
+  var RAIN_MAX = 50;
+
   var $ = function (id) { return document.getElementById(id); };
 
   var el = {
@@ -61,6 +69,7 @@
     spark: $('spark'),
     sparkPeak: $('spark-peak'),
     toast: $('toast'),
+    rain: $('rain'),
     toTop: $('to-top'),
     themeBtn: $('theme-btn'),
     themeMenu: $('theme-menu'),
@@ -99,6 +108,65 @@
     return hist;
   }
 
+  /* ------------------------------------------------------------ theme rain */
+
+  function prefersReducedMotion() {
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  function rnd(min, max) { return min + Math.random() * (max - min); }
+
+  function makeRainItem(cfg, clickX, clickY) {
+    var img = document.createElement('img');
+    var size = rnd(20, 40);
+    img.className = 'rain-item' + (clickX === undefined ? '' : ' is-click');
+    img.src = cfg.src;
+    img.alt = '';
+    img.width = img.height = Math.round(size);
+    img.style.width = size + 'px';
+    img.style.height = 'auto';
+
+    var dur = rnd(6, 14);
+    img.style.setProperty('--dur', dur.toFixed(2) + 's');
+    img.style.setProperty('--op', rnd(0.45, 0.95).toFixed(2));
+    img.style.setProperty('--drift', rnd(-70, 70).toFixed(0) + 'px');
+    img.style.setProperty('--rot0', rnd(-25, 25).toFixed(0) + 'deg');
+    img.style.setProperty('--rot1', rnd(-220, 220).toFixed(0) + 'deg');
+
+    if (clickX === undefined) {
+      img.style.left = rnd(0, 100).toFixed(2) + '%';
+      // negative delay so the screen is already full of them on arrival
+      img.style.setProperty('--delay', (-rnd(0, dur)).toFixed(2) + 's');
+    } else {
+      img.style.left = clickX + 'px';
+      img.style.top = clickY + 'px';
+      img.style.setProperty('--delay', '0s');
+      img.addEventListener('animationend', function () {
+        if (img.parentNode) img.parentNode.removeChild(img);
+      });
+    }
+    return img;
+  }
+
+  function buildRain(themeId) {
+    el.rain.textContent = '';
+    var cfg = RAIN[themeId];
+    if (!cfg || prefersReducedMotion()) return;
+    var frag = document.createDocumentFragment();
+    for (var i = 0; i < RAIN_COUNT; i++) frag.appendChild(makeRainItem(cfg));
+    el.rain.appendChild(frag);
+  }
+
+  function spawnRainAt(x, y) {
+    var cfg = RAIN[document.documentElement.getAttribute('data-theme')];
+    if (!cfg || !cfg.clickable || prefersReducedMotion()) return;
+    var room = RAIN_MAX - el.rain.childElementCount;
+    var n = Math.max(0, Math.min(7, room));
+    for (var i = 0; i < n; i++) {
+      el.rain.appendChild(makeRainItem(cfg, x + rnd(-30, 30), y + rnd(-30, 30)));
+    }
+  }
+
   /* ----------------------------------------------------------------- themes */
 
   function applyTheme(id) {
@@ -109,8 +177,9 @@
     document.body.className = 'antialiased ' + theme;
     safeSet(CONFIG.themeKey, theme);
     Array.prototype.forEach.call(el.themeMenu.children, function (btn) {
-      btn.setAttribute('aria-checked', String(btn.dataset.theme === theme));
+      btn.setAttribute('aria-checked', String(btn.dataset.themeId === theme));
     });
+    buildRain(theme);
   }
 
   function buildThemeMenu() {
@@ -118,7 +187,7 @@
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'theme-option';
-      btn.dataset.theme = t.id;
+      btn.dataset.themeId = t.id;
       btn.setAttribute('role', 'menuitemradio');
       btn.setAttribute('aria-checked', 'false');
 
@@ -626,6 +695,7 @@
     });
     document.addEventListener('click', function (e) {
       if (!el.themeMenu.hidden && !el.themeMenu.contains(e.target)) closeThemeMenu();
+      spawnRainAt(e.clientX, e.clientY);
     });
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') closeThemeMenu();
