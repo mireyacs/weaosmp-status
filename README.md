@@ -13,7 +13,8 @@ A live status page for the **weaosmp.xyz** Minecraft server, styled after the
 - **Stats** — player count, slot capacity bar, version + protocol, resolved IP, server software, plugin/mod counts
 - **MOTD** rendered with full Minecraft `§` colour and format codes (including Bungee `§x` hex)
 - **Recent checks** — an uptime strip and a player-count sparkline built from your own visits
-- **Themes** — WEAO Dark, AMOLED, Kyoto and Light, remembered between visits
+- **Themes** — all nine from WEAO's own picker (Dark, Light, Amoled, Kyoto, voxlis.NET, Pulsery, Sirmeme, Revision, Ball 2.0), remembered between visits
+- **Back to top** — a circular button appears in the bottom-right once you scroll past 320px
 
 ## How it works
 
@@ -25,6 +26,16 @@ GitHub Pages with no backend.
 | Server ping | [mcstatus.io](https://mcstatus.io) `v2/status/java`, falling back to [mcsrvstat.us](https://mcsrvstat.us) `v3` |
 | Player heads | [mc-heads.net](https://mc-heads.net) |
 | History | `localStorage` — it never leaves your browser and starts when you first open the page |
+| Theme tokens | Extracted from weao.gg's compiled stylesheet, so the palettes are exact rather than approximated |
+
+### Assets
+
+Both live in `assets/img/` and ship with the page rather than being hotlinked:
+
+- `favicon.ico` — WEAO's own favicon
+- `server-icon.webp` — the SMP's Discord icon, shown beside the address. It
+  renders in full colour while the server is up and desaturates to grayscale
+  whenever the server is down or the status API is unreachable.
 
 MOTD and player names come back from the API as `§`-coded strings and are parsed
 into DOM nodes locally; no API HTML is ever injected into the page.

@@ -16,10 +16,15 @@
   };
 
   var THEMES = [
-    { id: 'dark',   name: 'WEAO Dark', swatch: '#1a1a1a' },
-    { id: 'amoled', name: 'AMOLED',    swatch: '#000000' },
-    { id: 'kyoto',  name: 'Kyoto',     swatch: '#171821' },
-    { id: 'light',  name: 'Light',     swatch: '#f5f5f5' }
+    { id: 'dark',     name: 'Dark',       colors: ['#000000', '#1a1a1a', '#3bea57', '#ec3b47'] },
+    { id: 'light',    name: 'Light',      colors: ['#ffffff', '#f5f5f5', '#3bea57', '#ec3b47'] },
+    { id: 'amoled',   name: 'Amoled',     colors: ['#000000', '#000000', '#3bea57', '#ec3b47'] },
+    { id: 'kyoto',    name: 'Kyoto',      colors: ['#171821', '#1a1b26', '#8b5cf6', '#ec4899'] },
+    { id: 'voxlis',   name: 'voxlis.NET', colors: ['#000000', '#000000', '#dc2626', '#ef4444'] },
+    { id: 'pulsery',  name: 'Pulsery',    colors: ['#0a0a0f', '#161625', '#6366f1', '#8b5cf6'] },
+    { id: 'sirmeme',  name: 'Sirmeme',    colors: ['#000000', '#1a1a1a', '#ff00d8', '#35ff03'] },
+    { id: 'revision', name: 'Revision',   colors: ['#070304', '#0f0f14', '#e06c75', '#e0e0e0'] },
+    { id: 'ball20',   name: 'Ball 2.0',   colors: ['#cccccc', '#aaaaaa', '#888888', '#666666'] }
   ];
 
   var $ = function (id) { return document.getElementById(id); };
@@ -56,6 +61,7 @@
     spark: $('spark'),
     sparkPeak: $('spark-peak'),
     toast: $('toast'),
+    toTop: $('to-top'),
     themeBtn: $('theme-btn'),
     themeMenu: $('theme-menu'),
     statusCard: document.querySelector('.status-card')
@@ -118,7 +124,10 @@
 
       var sw = document.createElement('span');
       sw.className = 'theme-swatch';
-      sw.style.background = t.swatch;
+      // four quadrants, one per theme colour — legible at 15px where bands are not
+      sw.style.background = 'conic-gradient(from 225deg, ' + t.colors.map(function (c, i) {
+        return c + ' 0 ' + ((i + 1) * 25) + '%';
+      }).join(', ') + ')';
 
       var label = document.createElement('span');
       label.textContent = t.name;
@@ -408,14 +417,8 @@
       el.statusSub.textContent += ' • EULA blocked';
     }
 
-    // icon
-    if (data.icon) {
-      el.icon.src = data.icon;
-      el.icon.style.visibility = 'visible';
-    } else {
-      el.icon.removeAttribute('src');
-      el.icon.style.visibility = 'hidden';
-    }
+    // The icon itself is shipped with the page; it desaturates while the server is down.
+    el.icon.classList.toggle('is-down', !data.online);
 
     // MOTD
     if (data.online && data.motdRaw) {
@@ -584,6 +587,7 @@
       el.lastChecked.textContent = 'Last checked ' + formatTime(lastCheckedAt);
     }).catch(function (err) {
       setBadge('error', 'Unreachable');
+      el.icon.classList.add('is-down');
       el.statusSub.textContent = 'Could not reach the status API (' + (err && err.message ? err.message : 'network error') + ').';
       el.playersPill.textContent = 'Unknown';
       el.playerGrid.textContent = '';
@@ -638,6 +642,24 @@
       }, function () {
         toast('Copy failed — the address is ' + address, 'err');
       });
+    });
+
+    var ticking = false;
+    function syncToTop() {
+      var y = window.pageYOffset || document.documentElement.scrollTop;
+      el.toTop.classList.toggle('show', y > 320);
+      ticking = false;
+    }
+    window.addEventListener('scroll', function () {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(syncToTop);
+    }, { passive: true });
+    syncToTop();
+
+    el.toTop.addEventListener('click', function () {
+      var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
     });
 
     document.addEventListener('visibilitychange', function () {
