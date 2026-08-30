@@ -80,13 +80,39 @@
     sparkPeak: $('spark-peak'),
     toast: $('toast'),
     rain: $('rain'),
+    devPanel: $('dev-panel'),
+    devBanner: $('dev-banner'),
+    devBannerText: $('dev-banner-text'),
+    devBannerReset: $('dev-banner-reset'),
+    devHost: $('dev-host'),
+    devPort: $('dev-port'),
+    devApply: $('dev-apply'),
+    devReset: $('dev-reset'),
+    devTargetHint: $('dev-target-hint'),
+    devSource: $('dev-source'),
+    devInterval: $('dev-interval'),
+    devPing: $('dev-ping'),
+    devJson: $('dev-json'),
+    devDiag: $('dev-diag'),
+    devCopyJson: $('dev-copy-json'),
+    devCopyDiag: $('dev-copy-diag'),
+    devPurge: $('dev-purge'),
+    devClearHistory: $('dev-clear-history'),
+    devLock: $('dev-lock'),
+    devMin: $('dev-min'),
+    devClose: $('dev-close'),
     toTop: $('to-top'),
     themeBtn: $('theme-btn'),
     themeMenu: $('theme-menu'),
     statusCard: document.querySelector('.status-card')
   };
 
-  var address = CONFIG.host + (CONFIG.port === 25565 ? '' : ':' + CONFIG.port);
+  // the default target, kept so developer mode can always get back to it
+  var DEFAULT_TARGET = { host: CONFIG.host, port: CONFIG.port, refreshMs: CONFIG.refreshMs };
+
+  function serverAddress() {
+    return CONFIG.host + (CONFIG.port === 25565 ? '' : ':' + CONFIG.port);
+  }
   var lastCheckedAt = null;
   var lastCheckedKey = 'status.lastChecked';
   var lastData = null;
@@ -596,8 +622,11 @@
     });
   }
 
+  var lastRaw = null;
+
   // Primary source: mcstatus.io
   function fromMcStatusIo(d) {
+    lastRaw = d;
     var players = d.players || {};
     return {
       source: 'mcstatus.io',
@@ -624,6 +653,7 @@
 
   // Fallback source: mcsrvstat.us
   function fromMcSrvStat(d) {
+    lastRaw = d;
     var players = d.players || {};
     var list = [];
     if (Array.isArray(players.list)) {
@@ -656,11 +686,15 @@
 
   function queryStatus() {
     var target = encodeURIComponent(CONFIG.host + ':' + CONFIG.port);
-    return fetchJson('https://api.mcstatus.io/v2/status/java/' + target)
-      .then(fromMcStatusIo)
-      .catch(function () {
-        return fetchJson('https://api.mcsrvstat.us/3/' + target).then(fromMcSrvStat);
-      });
+    var primary = function () {
+      return fetchJson('https://api.mcstatus.io/v2/status/java/' + target).then(fromMcStatusIo);
+    };
+    var fallback = function () {
+      return fetchJson('https://api.mcsrvstat.us/3/' + target).then(fromMcSrvStat);
+    };
+    if (dev.source === 'mcstatus') return primary();
+    if (dev.source === 'mcsrvstat') return fallback();
+    return primary().catch(fallback);
   }
 
   /* -------------------------------------------------------------- rendering */
@@ -752,9 +786,13 @@
     }
   }
 
+  function renderTarget() {
+    el.hostLabel.textContent = serverAddress();
+    el.statAddress.textContent = serverAddress();
+  }
+
   function renderStatus(data) {
-    el.hostLabel.textContent = address;
-    el.statAddress.textContent = address;
+    renderTarget();
     el.statIp.textContent = data.ip ? data.ip + ':' + data.port : ' ';
 
     if (data.online) {
@@ -912,6 +950,343 @@
     }, 2200);
   }
 
+
+  /* ------------------------------------------------------------- dev mode
+     Unlocked by typing the code anywhere on the page. Everything it changes
+     lives under one storage key, so purging is a single sweep.
+     ---------------------------------------------------------------------- */
+
+  var DEV_CODE = 'developermode';
+  var DEV_KEY = 'weaosmp:dev';
+
+  var dev = { unlocked: false, host: null, port: null, refreshMs: null, source: 'auto', force: 'off' };
+
+  function devSave() {
+    safeSet(DEV_KEY, JSON.stringify({
+      unlocked: dev.unlocked,
+      host: dev.host,
+      port: dev.port,
+      refreshMs: dev.refreshMs,
+      source: dev.source
+    }));
+  }
+
+  function devLoad() {
+    var raw = safeGet(DEV_KEY);
+    if (!raw) return;
+    try {
+      var d = JSON.parse(raw);
+      dev.unlocked = !!d.unlocked;
+      dev.host = d.host || null;
+      dev.port = d.port || null;
+      dev.refreshMs = d.refreshMs || null;
+      dev.source = d.source || 'auto';
+    } catch (e) { /* corrupt entry, fall back to defaults */ }
+    applyTarget();
+  }
+
+  // push the override (or the default) into CONFIG, which everything else reads
+  function applyTarget() {
+    CONFIG.host = dev.host || DEFAULT_TARGET.host;
+    CONFIG.port = dev.port || DEFAULT_TARGET.port;
+    CONFIG.refreshMs = dev.refreshMs || DEFAULT_TARGET.refreshMs;
+  }
+
+  function isOverridden() {
+    return CONFIG.host !== DEFAULT_TARGET.host || CONFIG.port !== DEFAULT_TARGET.port;
+  }
+
+  function devBanner() {
+    var on = isOverridden() || dev.force !== 'off';
+    el.devBanner.hidden = !on;
+    if (!on) return;
+    var bits = [];
+    if (isOverridden()) bits.push('target ' + serverAddress());
+    if (dev.force !== 'off') bits.push('forced ' + dev.force);
+    el.devBannerText.textContent = 'DEV — ' + bits.join(' · ');
+  }
+
+  /* --- synthetic responses so UI work is not blocked by a dead server --- */
+
+  function forcedData(kind) {
+    var base = {
+      source: 'forced', online: false, host: CONFIG.host, port: CONFIG.port,
+      ip: '203.0.113.10', eulaBlocked: false, playersOnline: null, playersMax: null,
+      list: [], versionRaw: '', versionClean: '', protocol: null, motdRaw: '',
+      icon: null, software: null, plugins: 0, mods: 0
+    };
+    if (kind === 'offline') return base;
+    base.online = true;
+    base.playersOnline = 3;
+    base.playersMax = 20;
+    base.versionClean = '1.21.1';
+    base.versionRaw = '1.21.1';
+    base.protocol = 767;
+    base.software = 'Paper';
+    base.plugins = 12;
+    base.motdRaw = '§aWeaoSMP §7» §fforced preview\n§eall systems nominal';
+    // real UUIDs, so the head renderer is genuinely exercised
+    base.list = [
+      { uuid: '069a79f4-44e9-4726-a5be-fca90e38aaf5', name: 'Notch', raw: 'Notch' },
+      { uuid: '853c80ef-3c37-49fd-aa49-938b674adae6', name: 'jeb_', raw: '§bjeb_' },
+      { uuid: '61699b2e-d327-4a01-9f1e-0ea8c3f06bc6', name: 'Dinnerbone', raw: 'Dinnerbone' }
+    ];
+    return base;
+  }
+
+  /* --------------------------------------------------------------- panel --- */
+
+  function devOpen() {
+    dev.unlocked = true;
+    devSave();
+    el.devPanel.hidden = false;
+    el.devPanel.classList.remove('is-min');
+    devSync();
+  }
+
+  function devLock() {
+    dev.unlocked = false;
+    dev.force = 'off';
+    dev.host = dev.port = dev.refreshMs = null;
+    dev.source = 'auto';
+    retarget();
+    el.devPanel.hidden = true;
+  }
+
+  // Retarget: repaint the address at once and blank the stale figures, so the
+  // page never shows one server's data under another's name.
+  function retarget() {
+    applyTarget();
+    lastRaw = null;
+    lastData = null;
+    renderTarget();
+    el.statIp.textContent = ' ';
+    setBadge('checking', t('status.checking'));
+    el.statusSub.textContent = t('status.contacting');
+    devSave();
+    devSync();
+    check();
+  }
+
+  function devSync() {
+    el.devHost.value = CONFIG.host;
+    el.devPort.value = String(CONFIG.port);
+    el.devSource.value = dev.source;
+    el.devInterval.value = String(Math.round(CONFIG.refreshMs / 1000));
+    el.devTargetHint.textContent = isOverridden()
+      ? 'overridden — default is ' + DEFAULT_TARGET.host + ':' + DEFAULT_TARGET.port
+      : 'using the default target';
+    Array.prototype.forEach.call(el.devPanel.querySelectorAll('[data-force]'), function (b) {
+      b.classList.toggle('is-active', b.dataset.force === dev.force);
+    });
+    devBanner();
+    devDiag();
+    devJson();
+  }
+
+  function devJson() {
+    el.devJson.textContent = lastRaw
+      ? JSON.stringify(lastRaw, null, 2)
+      : (dev.force !== 'off' ? '(forced state — no network response)' : '—');
+  }
+
+  function storageBytes() {
+    var total = 0;
+    try {
+      for (var k in localStorage) {
+        if (Object.prototype.hasOwnProperty.call(localStorage, k)) {
+          total += k.length + (localStorage.getItem(k) || '').length;
+        }
+      }
+    } catch (e) { return null; }
+    return total;
+  }
+
+  function diagnostics() {
+    var bytes = storageBytes();
+    return {
+      target: serverAddress(),
+      'default': DEFAULT_TARGET.host + ':' + DEFAULT_TARGET.port,
+      source: dev.source,
+      forced: dev.force,
+      interval: Math.round(CONFIG.refreshMs / 1000) + 's',
+      theme: document.documentElement.getAttribute('data-theme'),
+      lang: document.documentElement.getAttribute('lang') + ' / ' + document.documentElement.getAttribute('dir'),
+      history: loadHistory().length + ' entries',
+      storage: bytes === null ? 'unavailable' : (bytes / 1024).toFixed(1) + ' KB',
+      viewport: window.innerWidth + '×' + window.innerHeight + ' @' + (window.devicePixelRatio || 1) + 'x',
+      network: navigator.onLine ? 'online' : 'offline',
+      agent: navigator.userAgent
+    };
+  }
+
+  function devDiag() {
+    var d = diagnostics();
+    el.devDiag.textContent = '';
+    Object.keys(d).forEach(function (k) {
+      var dt = document.createElement('dt');
+      dt.textContent = k;
+      var dd = document.createElement('dd');
+      dd.textContent = d[k];
+      el.devDiag.appendChild(dt);
+      el.devDiag.appendChild(dd);
+    });
+  }
+
+  function devCopy(text, label) {
+    var write = navigator.clipboard && navigator.clipboard.writeText
+      ? navigator.clipboard.writeText(text)
+      : Promise.reject();
+    write.then(function () { toast(label + ' copied', 'ok'); },
+               function () { toast('Clipboard unavailable', 'err'); });
+  }
+
+  /* -------------------------------------------------------------- purging --- */
+
+  function purgeCache() {
+    toast('Purging and reloading…', 'ok');
+    try {
+      Object.keys(window.localStorage)
+        .filter(function (k) { return k.indexOf('weaosmp:') === 0; })
+        .forEach(function (k) { window.localStorage.removeItem(k); });
+    } catch (e) { /* storage blocked */ }
+    try { window.sessionStorage.clear(); } catch (e) { /* ditto */ }
+
+    var jobs = [];
+    if (window.caches && window.caches.keys) {
+      jobs.push(window.caches.keys().then(function (keys) {
+        return Promise.all(keys.map(function (k) { return window.caches.delete(k); }));
+      }));
+    }
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+      jobs.push(navigator.serviceWorker.getRegistrations().then(function (regs) {
+        return Promise.all(regs.map(function (r) { return r.unregister(); }));
+      }));
+    }
+    // Storage is already gone; the Cache Storage and service-worker sweeps are
+    // best-effort. Both can be very slow (getRegistrations has been seen taking
+    // 20s+), so never let them hold up the reload the user is waiting on.
+    var swept = Promise.all(jobs)['catch'](function () { /* nothing registered */ });
+    var cap = new Promise(function (resolve) { setTimeout(resolve, 1500); });
+    var reloaded = false;
+
+    Promise.race([swept, cap]).then(function () {
+      if (reloaded) return;
+      reloaded = true;
+      // a fresh URL guarantees the reload misses the HTTP cache too
+      window.location.replace(window.location.pathname + '?purged=' + Date.now());
+    });
+  }
+
+  // two-step: the button arms itself first, then commits
+  function armed(btn, label, run) {
+    var timer = null;
+    btn.addEventListener('click', function () {
+      if (btn.classList.contains('is-armed')) {
+        clearTimeout(timer);
+        btn.classList.remove('is-armed');
+        btn.textContent = label;
+        run();
+        return;
+      }
+      btn.classList.add('is-armed');
+      btn.textContent = 'Confirm?';
+      timer = setTimeout(function () {
+        btn.classList.remove('is-armed');
+        btn.textContent = label;
+      }, 4000);
+    });
+  }
+
+  function initDev() {
+    // the unlock code, ignored while typing into a field
+    var buffer = '';
+    document.addEventListener('keydown', function (e) {
+      var node = e.target;
+      var tag = (node && node.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select' || (node && node.isContentEditable)) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (!e.key || e.key.length !== 1) return;
+      buffer = (buffer + e.key.toLowerCase()).slice(-DEV_CODE.length);
+      if (buffer === DEV_CODE) {
+        buffer = '';
+        devOpen();
+        toast('Developer mode unlocked', 'ok');
+      }
+    });
+
+    el.devMin.addEventListener('click', function () { el.devPanel.classList.toggle('is-min'); });
+    el.devClose.addEventListener('click', function () { el.devPanel.hidden = true; });
+    el.devLock.addEventListener('click', devLock);
+
+    el.devApply.addEventListener('click', function () {
+      var host = el.devHost.value.trim().replace(/^[a-z]+:\/\//i, '').replace(/\/.*$/, '');
+      var port = parseInt(el.devPort.value, 10);
+      if (!host) { toast('Enter a hostname', 'err'); return; }
+      if (!port || port < 1 || port > 65535) port = 25565;
+      dev.host = host;
+      dev.port = port;
+      retarget();
+    });
+
+    el.devReset.addEventListener('click', function () {
+      dev.host = dev.port = null;
+      retarget();
+    });
+
+    el.devBannerReset.addEventListener('click', function () {
+      dev.host = dev.port = null;
+      dev.force = 'off';
+      retarget();
+    });
+
+    el.devSource.addEventListener('change', function () {
+      dev.source = el.devSource.value;
+      devSave();
+      check();
+    });
+
+    el.devInterval.addEventListener('change', function () {
+      var secs = parseInt(el.devInterval.value, 10);
+      if (!secs || secs < 5) secs = 5;
+      if (secs > 600) secs = 600;
+      dev.refreshMs = secs * 1000;
+      applyTarget();
+      devSave();
+      devSync();
+      schedule();
+    });
+
+    el.devPing.addEventListener('click', check);
+
+    Array.prototype.forEach.call(el.devPanel.querySelectorAll('[data-force]'), function (btn) {
+      btn.addEventListener('click', function () {
+        dev.force = btn.dataset.force;
+        if (dev.force !== 'off') lastRaw = null;
+        devSync();
+        check();
+      });
+    });
+
+    el.devCopyJson.addEventListener('click', function () {
+      devCopy(el.devJson.textContent, 'Response');
+    });
+    el.devCopyDiag.addEventListener('click', function () {
+      var d = diagnostics();
+      devCopy(Object.keys(d).map(function (k) { return k + ': ' + d[k]; }).join('\n'), 'Diagnostics');
+    });
+
+    armed(el.devClearHistory, 'Clear history', function () {
+      safeSet(CONFIG.historyKey, '[]');
+      renderHistory([]);
+      devSync();
+      toast('History cleared', 'ok');
+    });
+    armed(el.devPurge, 'Purge site cache', purgeCache);
+
+    if (dev.unlocked) devOpen();
+  }
+
   /* ------------------------------------------------------------------ cycle */
 
   function setLoading(state) {
@@ -926,7 +1301,13 @@
     setLoading(true);
     if (!lastCheckedAt) setBadge('checking', t('status.checking'));
 
-    queryStatus().then(function (data) {
+    var request = dev.force === 'off'
+      ? queryStatus()
+      : (dev.force === 'error'
+          ? Promise.reject(new Error('forced error'))
+          : Promise.resolve(forcedData(dev.force)));
+
+    request.then(function (data) {
       renderStatus(data);
       renderPlayers(data);
       var hist = pushHistory({
@@ -956,6 +1337,7 @@
       setLoading(false);
       nextCheckAt = Date.now() + CONFIG.refreshMs;
       schedule();
+      if (!el.devPanel.hidden) devSync();
     });
   }
 
@@ -974,6 +1356,7 @@
   /* ------------------------------------------------------------------- init */
 
   function init() {
+    devLoad();
     buildThemeMenu();
     applyTheme(safeGet(CONFIG.themeKey) || 'dark');
 
@@ -993,12 +1376,12 @@
 
     el.copyBtn.addEventListener('click', function () {
       var write = navigator.clipboard && navigator.clipboard.writeText
-        ? navigator.clipboard.writeText(address)
+        ? navigator.clipboard.writeText(serverAddress())
         : Promise.reject();
       write.then(function () {
-        toast(t('toast.copied', { address: address }), 'ok');
+        toast(t('toast.copied', { address: serverAddress() }), 'ok');
       }, function () {
-        toast(t('toast.copyFailed', { address: address }), 'err');
+        toast(t('toast.copyFailed', { address: serverAddress() }), 'err');
       });
     });
 
@@ -1025,6 +1408,8 @@
     });
 
     renderHistory(loadHistory());
+    initDev();
+    devBanner();
     setInterval(tickCountdown, 1000);
     check();
   }

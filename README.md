@@ -86,6 +86,39 @@ It serves the repo over HTTP, screenshots `tools/og-image.html` at exactly
 into the repo, so the script stages the render through `$HOME/Downloads` (or
 `$OG_STAGE`) and moves it into place.
 
+## Developer mode
+
+Type `developermode` anywhere on the page (outside a text field) to unlock a
+debug panel. It stays unlocked across reloads until you press **Lock**.
+
+| Tool | What it does |
+| --- | --- |
+| Server target | Point the page at any Minecraft server, host and port |
+| Source | Pin the fetch to mcstatus.io or mcsrvstat.us instead of failing over |
+| Interval | Override the 60s refresh, 5–600s |
+| Force UI state | Render against a synthetic online/offline/error response |
+| Last response | The untouched API JSON, with a copy button |
+| Diagnostics | Target, theme, language, history size, storage use, viewport, agent |
+| Clear history | Drop the uptime history only |
+| Purge site cache | Clear all `weaosmp:` keys, session storage, Cache Storage and any service worker, then reload past the HTTP cache |
+
+Notes for anyone extending it:
+
+- **This is a convenience, not a security boundary.** Everything it does runs
+  client-side and is visible in the source; it is hidden to stay out of the way,
+  not to keep anyone out.
+- Whenever the page is pointed somewhere other than the default, or a state is
+  forced, an amber banner says so. Retargeting blanks the previous server's
+  figures immediately rather than leaving them under the new name.
+- **Force UI state** is the useful one day to day: weaosmp is often down, and
+  the synthetic response carries a coloured MOTD, real player UUIDs and plugin
+  counts, so the whole render path can be worked on without a live server.
+- Purge caps the Cache Storage and service-worker sweeps at 1.5s and reloads
+  regardless. Both can be pathologically slow — `getRegistrations()` was
+  measured at 23s here — and the reload must not wait on them.
+- The panel is deliberately `dir="ltr"` and untranslated, including under the
+  Hebrew theme. It is a debug surface, not part of the site.
+
 ## Translations
 
 A theme may carry a language: `{ id: 'israel', …, lang: 'he' }` in the `THEMES`

@@ -207,6 +207,96 @@
   <p class="footer-copy" data-i18n-html="footer.copy">Unofficial community status page for <strong>weaosmp.xyz</strong>. Not affiliated with Mojang or Microsoft.</p>
 </footer>
 
+
+<!-- Developer mode: hidden until "developermode" is typed. Kept dir="ltr" and
+     untranslated on purpose — it is a debug surface, not part of the site. -->
+<div class="dev-banner" id="dev-banner" dir="ltr" hidden>
+  <span id="dev-banner-text"></span>
+  <button type="button" id="dev-banner-reset">reset</button>
+</div>
+
+<aside class="dev-panel" id="dev-panel" dir="ltr" hidden aria-label="Developer tools">
+  <header class="dev-head">
+    <span class="dev-dot"></span>
+    <span class="dev-title">Developer mode</span>
+    <div class="dev-head-actions">
+      <button type="button" class="dev-icon" id="dev-min" title="Collapse">&minus;</button>
+      <button type="button" class="dev-icon" id="dev-close" title="Hide (stays unlocked)">&times;</button>
+    </div>
+  </header>
+
+  <div class="dev-body" id="dev-body">
+    <section class="dev-section">
+      <h3>Server target</h3>
+      <div class="dev-row">
+        <input id="dev-host" class="dev-input" placeholder="hostname" spellcheck="false" autocomplete="off" autocapitalize="off" />
+        <input id="dev-port" class="dev-input dev-port" placeholder="25565" inputmode="numeric" autocomplete="off" />
+      </div>
+      <div class="dev-row">
+        <button type="button" class="dev-btn primary" id="dev-apply">Apply</button>
+        <button type="button" class="dev-btn" id="dev-reset">Reset</button>
+      </div>
+      <p class="dev-hint" id="dev-target-hint"></p>
+    </section>
+
+    <section class="dev-section">
+      <h3>Fetch</h3>
+      <label class="dev-field">Source
+        <select id="dev-source" class="dev-input">
+          <option value="auto">auto (mcstatus.io, then mcsrvstat.us)</option>
+          <option value="mcstatus">mcstatus.io only</option>
+          <option value="mcsrvstat">mcsrvstat.us only</option>
+        </select>
+      </label>
+      <label class="dev-field">Interval
+        <span class="dev-inline"><input id="dev-interval" class="dev-input dev-port" type="number" min="5" max="600" step="5" /> s</span>
+      </label>
+      <div class="dev-row">
+        <button type="button" class="dev-btn" id="dev-ping">Ping now</button>
+      </div>
+    </section>
+
+    <section class="dev-section">
+      <h3>Force UI state</h3>
+      <div class="dev-row dev-wrap">
+        <button type="button" class="dev-btn" data-force="off">Live</button>
+        <button type="button" class="dev-btn" data-force="online">Online</button>
+        <button type="button" class="dev-btn" data-force="offline">Offline</button>
+        <button type="button" class="dev-btn" data-force="error">API error</button>
+      </div>
+      <p class="dev-hint">Renders the page against a synthetic response, so the offline server does not block UI work.</p>
+    </section>
+
+    <section class="dev-section">
+      <h3>Last response</h3>
+      <pre class="dev-json" id="dev-json">&mdash;</pre>
+      <div class="dev-row">
+        <button type="button" class="dev-btn" id="dev-copy-json">Copy JSON</button>
+        <button type="button" class="dev-btn" id="dev-copy-diag">Copy diagnostics</button>
+      </div>
+    </section>
+
+    <section class="dev-section">
+      <h3>Diagnostics</h3>
+      <dl class="dev-diag" id="dev-diag"></dl>
+    </section>
+
+    <section class="dev-section">
+      <h3>Storage</h3>
+      <div class="dev-row dev-wrap">
+        <button type="button" class="dev-btn danger" id="dev-purge">Purge site cache</button>
+        <button type="button" class="dev-btn" id="dev-clear-history">Clear history</button>
+      </div>
+      <p class="dev-hint">Purge drops saved history, theme, dev settings, Cache Storage and any service worker, then reloads past the HTTP cache.</p>
+    </section>
+
+    <footer class="dev-foot">
+      <button type="button" class="dev-btn" id="dev-lock">Lock</button>
+      <span class="dev-hint">type <code>developermode</code> to reopen</span>
+    </footer>
+  </div>
+</aside>
+
 <button class="to-top" id="to-top" type="button" data-i18n-aria-label="toTop.aria" data-i18n-title="toTop.title" aria-label="Scroll back to top" title="Back to top">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 19V5m0 0l-7 7m7-7l7 7"/></svg>
 </button>
