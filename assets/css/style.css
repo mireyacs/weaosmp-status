@@ -782,6 +782,9 @@ html[data-theme="ball20"] .theme-option[aria-checked="true"] { color: #000; }
   transition: transform .15s ease, filter .15s ease;
 }
 .uptime-cell:hover { transform: scaleY(1.08); filter: brightness(1.25); }
+/* Stretches with no measurement — before the first check, or while the page
+   was closed — sit lower than real checks so an absence reads as a gap. */
+.uptime-cell.none { height: 58%; opacity: .75; }
 .uptime-cell.up { background: linear-gradient(180deg, var(--status-updated-start), var(--status-updated-end)); }
 .uptime-cell.down { background: linear-gradient(180deg, var(--status-outdated-start), var(--status-outdated-end)); }
 

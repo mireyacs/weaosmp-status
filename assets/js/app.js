@@ -12,7 +12,8 @@
     historyKey: 'weaosmp:history:v1',
     themeKey: 'weaosmp:theme',
     historyMax: 720,      // ~12h at one ping per minute
-    stripCells: 60
+    stripCells: 60,
+    gapCells: 4           // most "no data" cells drawn for a single absence
   };
 
   var THEMES = [
@@ -213,7 +214,7 @@
       'history.online': 'Online',
       'history.offline': 'Offline',
       'history.noData': 'No data',
-      'history.note': 'Stored in your browser only — history starts when you first open this page.',
+      'history.note': 'Stored in your browser only — gaps are time the page was closed.',
       'history.spark': 'Player count over time',
       'history.empty': 'No data yet',
       'history.pill_one': '{percent}% up • {count} check',
@@ -221,7 +222,11 @@
       'history.tipUp': '{time} — online, {players} playing',
       'history.tipDown': '{time} — offline',
       'history.tipNone': 'No data',
+      'history.tipGap': 'No data — page closed for {duration}',
       'history.peak': 'peak {peak} • now {now}',
+      'unit.d': 'd',
+      'unit.h': 'h',
+      'unit.m': 'm',
 
       'how.title': 'How this works',
       'how.body': 'The page pings <code>weaosmp.xyz:25565</code> through the public <a href="https://mcstatus.io" target="_blank" rel="noopener noreferrer">mcstatus.io</a> API (falling back to <a href="https://mcsrvstat.us" target="_blank" rel="noopener noreferrer">mcsrvstat.us</a>) directly from your browser, then refreshes every 60 seconds.',
@@ -311,7 +316,7 @@
       'history.online': 'מקוון',
       'history.offline': 'לא מקוון',
       'history.noData': 'אין נתונים',
-      'history.note': 'נשמר בדפדפן שלך בלבד — ההיסטוריה מתחילה בפתיחה הראשונה של הדף.',
+      'history.note': 'נשמר בדפדפן שלך בלבד — הרווחים מסמנים זמן שבו הדף היה סגור.',
       'history.spark': 'מספר השחקנים לאורך זמן',
       'history.empty': 'אין נתונים עדיין',
       'history.pill_one': '{percent}% זמינות • בדיקה אחת',
@@ -319,7 +324,14 @@
       'history.tipUp': '{time} — מקוון, {players} משחקים',
       'history.tipDown': '{time} — לא מקוון',
       'history.tipNone': 'אין נתונים',
+      'history.tipGap': 'אין נתונים — הדף היה סגור {duration}',
       'history.peak': 'שיא {peak} • כעת {now}',
+      'unit.d_one': ' יום',
+      'unit.d': ' ימים',
+      'unit.h_one': ' שעה',
+      'unit.h': ' שע׳',
+      'unit.m_one': ' דקה',
+      'unit.m': ' דק׳',
 
       'how.title': 'איך זה עובד',
       'how.body': 'הדף בודק את <code>weaosmp.xyz:25565</code> דרך ממשק ה־API הציבורי <a href="https://mcstatus.io" target="_blank" rel="noopener noreferrer">mcstatus.io</a> (ובמידת הצורך <a href="https://mcsrvstat.us" target="_blank" rel="noopener noreferrer">mcsrvstat.us</a>) ישירות מהדפדפן שלך, ומתרענן כל 60 שניות.',
@@ -709,6 +721,18 @@
     return d.toLocaleTimeString(lang === 'he' ? 'he-IL' : [], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   }
 
+  function formatDuration(ms) {
+    var mins = Math.max(1, Math.round(ms / 60000));
+    var days = Math.floor(mins / 1440);
+    var hours = Math.floor((mins % 1440) / 60);
+    var rest = mins % 60;
+    var parts = [];
+    if (days) parts.push(days + tn('unit.d', days));
+    if (hours) parts.push(hours + tn('unit.h', hours));
+    if (rest && !days) parts.push(rest + tn('unit.m', rest));
+    return parts.length ? parts.join(' ') : (1 + tn('unit.m', 1));
+  }
+
   function headUrl(player) {
     var zeroUuid = !player.uuid || /^0{8}-0{4}-0{4}-0{4}-0{12}$/.test(player.uuid);
     var key = zeroUuid ? (player.name || 'MHF_Steve') : player.uuid;
@@ -844,20 +868,53 @@
     }
   }
 
+  // A raw check log says nothing about the stretches when the page was closed:
+  // two entries eight hours apart sit side by side and read as consecutive
+  // minutes. This walks the log and expands every stretch longer than a couple
+  // of poll intervals into explicit "no data" cells, capped so a week away does
+  // not push the real checks off the strip.
+  function withGaps(hist) {
+    var bucket = Math.max(CONFIG.refreshMs, 15000);
+    var threshold = bucket * 2.5;
+    var cells = [];
+    for (var i = 0; i < hist.length; i++) {
+      if (i > 0) {
+        var dt = hist[i].t - hist[i - 1].t;
+        if (dt > threshold) {
+          var missed = Math.min(Math.round(dt / bucket) - 1, CONFIG.gapCells);
+          for (var g = 0; g < missed; g++) cells.push({ gap: true, ms: dt });
+        }
+      }
+      cells.push(hist[i]);
+    }
+    return cells;
+  }
+
+  function noDataCell(title) {
+    var cell = document.createElement('div');
+    cell.className = 'uptime-cell none';
+    cell.title = title;
+    return cell;
+  }
+
   function renderHistory(hist) {
+    var cells = withGaps(hist);
+
     // uptime strip
     el.uptimeStrip.textContent = '';
-    var recent = hist.slice(-CONFIG.stripCells);
+    var recent = cells.slice(-CONFIG.stripCells);
     var padding = CONFIG.stripCells - recent.length;
 
     for (var i = 0; i < padding; i++) {
-      var blank = document.createElement('div');
-      blank.className = 'uptime-cell';
-      blank.title = t('history.tipNone');
-      el.uptimeStrip.appendChild(blank);
+      el.uptimeStrip.appendChild(noDataCell(t('history.tipNone')));
     }
 
     recent.forEach(function (entry) {
+      if (entry.gap) {
+        el.uptimeStrip.appendChild(
+          noDataCell(t('history.tipGap', { duration: formatDuration(entry.ms) })));
+        return;
+      }
       var cell = document.createElement('div');
       cell.className = 'uptime-cell ' + (entry.online ? 'up' : 'down');
       cell.title = entry.online
@@ -873,32 +930,52 @@
       el.uptimePill.textContent = tn('history.pill', hist.length, { percent: Math.round((ups / hist.length) * 100) });
     }
 
-    renderSpark(hist);
+    renderSpark(cells);
   }
 
-  function renderSpark(hist) {
-    var points = hist.filter(function (e) { return e.online && typeof e.players === 'number'; });
-    if (points.length < 2) {
+  // Splits the cell list into runs of consecutive plottable points. Anything
+  // that is not an online check with a player count — a gap, an outage, a
+  // response without numbers — ends the current run, so the line never spans
+  // time nobody measured.
+  function sparkSegments(cells) {
+    var segments = [];
+    var current = [];
+    cells.forEach(function (cell, i) {
+      if (!cell.gap && cell.online && typeof cell.players === 'number') {
+        current.push({ i: i, v: cell.players });
+        return;
+      }
+      if (current.length) { segments.push(current); current = []; }
+    });
+    if (current.length) segments.push(current);
+    return segments;
+  }
+
+  function renderSpark(cells) {
+    var window_ = cells.slice(-120);
+    var segments = sparkSegments(window_);
+    var values = [];
+    segments.forEach(function (seg) {
+      seg.forEach(function (point) { values.push(point.v); });
+    });
+
+    if (values.length < 2) {
       el.sparkWrap.hidden = true;
       return;
     }
     el.sparkWrap.hidden = false;
 
-    var series = points.slice(-120);
-    var values = series.map(function (e) { return e.players; });
     var peak = Math.max.apply(null, values);
     var top = Math.max(peak, 1);
     var W = 600, H = 90;
-    var step = series.length > 1 ? W / (series.length - 1) : W;
+    var span = Math.max(window_.length - 1, 1);
+    var step = W / span;
 
-    var coords = values.map(function (v, i) {
-      return [i * step, H - (v / top) * (H - 8) - 4];
-    });
-
-    var line = coords.map(function (c, i) {
-      return (i === 0 ? 'M' : 'L') + c[0].toFixed(1) + ' ' + c[1].toFixed(1);
-    }).join(' ');
-    var area = line + ' L' + W + ' ' + H + ' L0 ' + H + ' Z';
+    function coords(seg) {
+      return seg.map(function (point) {
+        return [point.i * step, H - (point.v / top) * (H - 8) - 4];
+      });
+    }
 
     var ns = 'http://www.w3.org/2000/svg';
     el.spark.textContent = '';
@@ -908,30 +985,50 @@
     grad.setAttribute('id', 'sparkGrad');
     grad.setAttribute('x1', '0'); grad.setAttribute('y1', '0');
     grad.setAttribute('x2', '0'); grad.setAttribute('y2', '1');
-    [['0%', '.34'], ['100%', '0']].forEach(function (s) {
+    [['0%', '.34'], ['100%', '0']].forEach(function (stopSpec) {
       var stop = document.createElementNS(ns, 'stop');
-      stop.setAttribute('offset', s[0]);
+      stop.setAttribute('offset', stopSpec[0]);
       stop.setAttribute('stop-color', 'var(--weao-green)');
-      stop.setAttribute('stop-opacity', s[1]);
+      stop.setAttribute('stop-opacity', stopSpec[1]);
       grad.appendChild(stop);
     });
     defs.appendChild(grad);
     el.spark.appendChild(defs);
 
-    var areaPath = document.createElementNS(ns, 'path');
-    areaPath.setAttribute('d', area);
-    areaPath.setAttribute('fill', 'url(#sparkGrad)');
-    el.spark.appendChild(areaPath);
+    segments.forEach(function (seg) {
+      var pts = coords(seg);
 
-    var linePath = document.createElementNS(ns, 'path');
-    linePath.setAttribute('d', line);
-    linePath.setAttribute('fill', 'none');
-    linePath.setAttribute('stroke', 'var(--weao-green)');
-    linePath.setAttribute('stroke-width', '2');
-    linePath.setAttribute('stroke-linejoin', 'round');
-    linePath.setAttribute('stroke-linecap', 'round');
-    linePath.setAttribute('vector-effect', 'non-scaling-stroke');
-    el.spark.appendChild(linePath);
+      if (pts.length === 1) {
+        var dot = document.createElementNS(ns, 'circle');
+        dot.setAttribute('cx', pts[0][0].toFixed(1));
+        dot.setAttribute('cy', pts[0][1].toFixed(1));
+        dot.setAttribute('r', '2.5');
+        dot.setAttribute('fill', 'var(--weao-green)');
+        el.spark.appendChild(dot);
+        return;
+      }
+
+      var line = pts.map(function (c, i) {
+        return (i === 0 ? 'M' : 'L') + c[0].toFixed(1) + ' ' + c[1].toFixed(1);
+      }).join(' ');
+      var area = line + ' L' + pts[pts.length - 1][0].toFixed(1) + ' ' + H +
+                 ' L' + pts[0][0].toFixed(1) + ' ' + H + ' Z';
+
+      var areaPath = document.createElementNS(ns, 'path');
+      areaPath.setAttribute('d', area);
+      areaPath.setAttribute('fill', 'url(#sparkGrad)');
+      el.spark.appendChild(areaPath);
+
+      var linePath = document.createElementNS(ns, 'path');
+      linePath.setAttribute('d', line);
+      linePath.setAttribute('fill', 'none');
+      linePath.setAttribute('stroke', 'var(--weao-green)');
+      linePath.setAttribute('stroke-width', '2');
+      linePath.setAttribute('stroke-linejoin', 'round');
+      linePath.setAttribute('stroke-linecap', 'round');
+      linePath.setAttribute('vector-effect', 'non-scaling-stroke');
+      el.spark.appendChild(linePath);
+    });
 
     el.sparkPeak.textContent = t('history.peak', { peak: peak, now: values[values.length - 1] });
   }

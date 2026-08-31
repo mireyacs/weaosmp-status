@@ -12,7 +12,9 @@ A live status page for the **weaosmp.xyz** Minecraft server, styled after the
 - **Currently playing** — player heads and names from the server's ping sample list
 - **Stats** — player count, slot capacity bar, version + protocol, resolved IP, server software, plugin/mod counts
 - **MOTD** rendered with full Minecraft `§` colour and format codes (including Bungee `§x` hex)
-- **Recent checks** — an uptime strip and a player-count sparkline built from your own visits
+- **Recent checks** — an uptime strip and a player-count sparkline built from your own visits.
+  Time the page was closed is drawn as "No data" rather than being closed over, so a
+  gap of hours never masquerades as two checks a minute apart
 - **Themes** — all nine from WEAO's own picker (Dark, Light, Amoled, Kyoto, voxlis.NET, Pulsery, Sirmeme, Revision, Ball 2.0), remembered between visits, with their signature effects:
   - **voxlis.NET** rains red hearts, and clicking anywhere spawns more
   - **Sirmeme** rains the Sirmeme emblem
@@ -33,7 +35,7 @@ GitHub Pages with no backend.
 | --- | --- |
 | Server ping | [mcstatus.io](https://mcstatus.io) `v2/status/java`, falling back to [mcsrvstat.us](https://mcsrvstat.us) `v3` |
 | Player heads | [mc-heads.net](https://mc-heads.net) |
-| History | `localStorage` — it never leaves your browser and starts when you first open the page |
+| History | `localStorage` — it never leaves your browser, and only covers time the page was open |
 | Theme tokens | Extracted from weao.gg's compiled stylesheet, so the palettes are exact rather than approximated |
 
 ### Assets
